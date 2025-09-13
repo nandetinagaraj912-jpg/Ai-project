@@ -1,0 +1,25 @@
+{
+  "name": "student-wellness-monitor",
+  "version": "1.0.0",
+  "description": "An application designed to support students' overall well-being through wellness monitoring and feedback.",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "test": "echo \"No tests specified\" && exit 0"
+  },
+  "keywords": [
+    "wellness",
+    "student",
+    "monitor",
+    "health"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.17.1",
+    "body-parser": "^1.19.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.7"
+  }
+}
