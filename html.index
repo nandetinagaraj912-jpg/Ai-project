@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Campus AI Chatbot • Info Assistant</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Custom font pairing for a friendly, academic feel */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Source+Serif+4:wght@500;700&display=swap');
+    :root {
+      --bg: #0b1220;            /* deep academic night */
+      --card: #101a33;          /* rich navy card */
+      --muted: #9fb2d6;         /* soft slate text */
+      --primary: #7dd3fc;       /* sky accent */
+      --primary-strong: #38bdf8;/* stronger sky */
+      --accent: #a78bfa;        /* lavender accent */
+      --success: #34d399;       /* green */
+      --warning: #f59e0b;       /* amber */
+      --danger: #fb7185;        /* rose */
+    }
+    html, body {
+      height: 100%;
+      background: radial-gradient(1200px 800px at 85% -10%, rgba(125,211,252,0.08), transparent 60%),
+                  radial-gradient(1000px 700px at -10% 110%, rgba(167,139,250,0.10), transparent 60%),
+                  var(--bg);
+      color: #e6eefb;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    }
+    .brand-title {
+      font-family: "Source Serif 4", Georgia, serif;
+      letter-spacing: 0.2px;
+    }
+    .glass {
+      background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+      border: 1px solid rgba(255,255,255,0.08);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.04);
+      backdrop-filter: blur(8px);
+    }
+    .bubble {
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+    }
+    .user-bubble {
+      background: linear-gradient(180deg, rgba(125, 211, 252, 0.18), rgba(125, 211, 252, 0.10));
+      border-color: rgba(125,211,252,0.35);
+    }
+    .bot-bubble {
+      background: linear-gradient(180deg, rgba(167,139,250,0.16), rgba(167,139,250,0.08));
+      border-color: rgba(167,139,250,0.35);
+    }
+    .badge {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 999px;
+      padding: 4px 10px;
+      color: var(--muted);
+      font-size: 12px;
+      display: inline-flex;
+      gap: 6px;
+      align-items: center;
+    }
+    .dot {
+      width: 6px; height: 6px; border-radius: 999px; background: var(--primary);
+      box-shadow: 0 0 12px rgba(125,211,252,0.9);
+    }
+    .typing {
+      display: inline-flex; gap: 6px; align-items: center;
+    }
+    .typing span {
+      width: 6px; height: 6px; border-radius: 999px; background: var(--muted); opacity: 0.35;
+      animation: bounce 1.2s infinite ease-in-out;
+    }
+    .typing span:nth-child(2) { animation-delay: 0.15s; }
+    .typing span:nth-child(3) { animation-delay: 0.3s; }
+    @keyframes bounce {
+      0%, 80%, 100% { transform: translateY(0); opacity: 0.35; }
+      40% { transform: translateY(-5px); opacity: 0.8; }
+    }
+    .pill {
+      border-radius: 999px;
+      transition: transform .08s ease, background .15s ease, color .15s ease;
+      user-select: none;
+    }
+    .pill:active { transform: translateY(1px) scale(0.99); }
+    .scroll-smooth { scroll-behavior: smooth; }
+    .shadow-soft { box-shadow: 0 8px 30px rgba(0,0,0,0.35); }
+    /* Responsive tweaks */
+    @media (max-width: 640px) {
+      .hide-on-mobile { display: none; }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+  <!-- Header -->
+  <header class="w-full">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-6 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <!-- Simple academic crest as SVG -->
+        <svg width="36" height="36" viewBox="0 0 48 48" fill="none" class="drop-shadow" aria-hidden="true">
+          <defs>
+            <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#7dd3fc"/>
+              <stop offset="100%" stop-color="#a78bfa"/>
+            </linearGradient>
+          </defs>
+          <rect x="6" y="6" width="36" height="36" rx="10" fill="url(#g1)" opacity="0.95"/>
+          <path d="M12 20l12-6 12 6-12 6-12-6z" stroke="white" stroke-width="2" fill="rgba(255,255,255,0.15)"/>
+          <path d="M18 23v7c0 1 6 4 6 4s6-3 6-4v-7" stroke="white" stroke-width="2" stroke-linecap="round" opacity="0.9"/>
+        </svg>
+        <div>
+          <div class="brand-title text-xl sm:text-2xl font-semibold tracking-tight">Campus AI Assistant</div>
+          <div class="text-xs text-[color:var(--muted)]">Schedules • Facilities • Dining • Library • Admin</div>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <span class="badge hide-on-mobile">
+          <span class="dot"></span>
+          Live demo
+        </span>
+        <button id="clearBtn" class="pill px-4 py-2 text-sm bg-white/5 hover:bg-white/10 border border-white/10 text-slate-200">Clear chat</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="flex-1 w-full">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 pb-28">
+      <div class="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6">
+        <!-- Chat Card -->
+        <section class="glass rounded-2xl p-4 sm:p-6 shadow-soft">
+          <!-- Suggested topics -->
+          <div class="flex flex-wrap gap-2 pb-4 border-b border-white/10">
+            <button class="suggest pill px-3 py-1.5 bg-white/5 hover:bg-white/10 text-[13px] border border-white/10" data-q="What are today’s class schedules?">Today’s schedule</button>
+            <button class="suggest pill px-3 py-1.5 bg-white/5 hover:bg-white/10 text-[13px] border border-white/10" data-q="Where can I eat on campus right now?">Open dining</button>
+            <button class="suggest pill px-3 py-1.5 bg-white/5 hover:bg-white/10 text-[13px] border border-white/10" data-q="What are the library hours and study room rules?">Library hours</button>
+            <button class="suggest pill px-3 py-1.5 bg-white/5 hover:bg-white/10 text-[13px] border border-white/10" data-q="How do I get a parking permit?">Parking permits</button>
+            <button class="suggest pill px-3 py-1.5 bg-white/5 hover:bg-white/10 text-[13px] border border-white/10" data-q="How can I contact student services?">Student services</button>
+          </div>
+
+          <!-- Transcript -->
+          <div id="chat" class="scroll-smooth space-y-4 py-5 min-h-[360px] max-h-[56vh] overflow-y-auto pr-1">
+            <!-- Bot welcome -->
+          </div>
+
+          <!-- Input -->
+          <div class="mt-4">
+            <form id="chatForm" class="flex items-end gap-3">
+              <div class="flex-1 glass rounded-xl px-3 py-2.5">
+                <label for="userInput" class="sr-only">Message</label>
+                <textarea id="userInput" rows="1" placeholder="Ask about schedules, dining, library, or admin…" class="w-full bg-transparent outline-none resize-none text-slate-100 placeholder:text-slate-400"></textarea>
+              </div>
+              <button id="sendBtn" class="pill bg-[color:var(--primary-strong)] hover:bg-[color:var(--primary)] text-[#0b1220] font-semibold px-5 py-2.5 rounded-xl shadow-soft">
+                Send
+              </button>
+            </form>
+            <div class="flex items-center justify-between mt-2 text-[12px] text-[color:var(--muted)]">
+              <span>Tip: Try “What’s open now?”</span>
+              <div class="flex items-center gap-2">
+                <button id="exportBtn" class="pill px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10">Export Q&A</button>
+                <button id="copyBtn" class="pill px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10">Copy last reply</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Side card: Quick Info -->
+        <aside class="glass rounded-2xl p-5 sm:p-6 space-y-5 h-fit">
+          <div class="flex items-center justify-between">
+            <h2 class="text-lg font-semibold">Campus quick picks</h2>
+            <span class="badge">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 3v18M3 12h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              Shortcuts
+            </span>
+          </div>
+
+          <div class="space-y-3">
+            <button class="quick pill w-full text-left px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10" data-q="Show me today’s events and classes.">
+              📅 Today’s schedule & events
+            </button>
+            <button class="quick pill w-full text-left px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10" data-q="Which dining halls are open right now?">
+              🍽️ Dining open now
+            </button>
+            <button class="quick pill w-full text-left px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10" data-q="What are the library hours, and how do I book a study room?">
+              📚 Library hours & rooms
+            </button>
+            <button class="quick pill w-full text-left px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10" data-q="How do I get a student ID and parking permit?">
+              🪪 ID & 🚗 Parking
+            </button>
+            <button class="quick pill w-full text-left px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10" data-q="Where are the gyms, labs, and printing services?">
+              🏋️ Labs, gyms, printing
+            </button>
+          </div>
+
+          <div class="pt-2 border-t border-white/10">
+            <div class="text-sm text-[color:var(--muted)]">This is a demo knowledge base. You can edit data inside the page to fit your campus.</div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="w-full">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-8 text-center text-[13px] text-[color:var(--muted)]">
+      Campus AI Assistant • Demo only. For official info, check your university website.
+    </div>
+  </footer>
+
+  <script>
+    // Demo Campus Database (edit these to match your campus)
+    const campusDB = {
+      timezone: "America/New_York",
+      today: () => new Date(),
+      terms: {
+        current: "Fall 2025",
+      },
+      schedules: [
+        { id: "CIS101", name: "Intro to Computing", day: "Mon/Wed", time: "09:00–10:15", location: "Tech Hall 104" },
+        { id: "MAT221", name: "Linear Algebra",    day: "Tue/Thu", time: "11:00–12:15", location: "Math Center 210" },
+        { id: "HIS110", name: "World History",     day: "Mon",     time: "14:00–16:30", location: "Humanities 3A" },
+      ],
+      events: [
+        { title: "Career Fair", day: "Wed", time: "12:00–16:00", location: "Student Center Ballroom" },
+        { title: "Basketball Game", day: "Fri", time: "19:00", location: "Arena" },
+      ],
+      facilities: {
+        gyms: [
+          { name: "North Gym", hours: "06:00–23:00", status: "Open", location: "North Complex" },
+          { name: "Rec Center", hours: "08:00–22:00", status: "Open", location: "South Quad" },
+        ],
+        labs: [
+          { name: "CS Lab A", hours: "09:00–20:00", status: "Open", location: "Tech Hall B2" },
+          { name: "Design Studio", hours: "10:00–18:00", status: "Closed", location: "Arts Building 2F" },
+        ],
+        printing: [
+          { name: "Main Print Hub", hours: "08:30–18:30", location: "Library Ground Floor" },
+          { name: "Engineering Print", hours: "09:00–17:00", location: "Tech Hall 120" },
+        ]
+      },
+      dining: [
+        { name: "Skyline Dining", type: "Hall", hours: "07:00–21:00", openNow: true, menu: ["Omelets", "Salad Bar", "Grill"] },
+        { name: "Campus Brew", type: "Cafe", hours: "07:30–18:00", openNow: true, menu: ["Espresso", "Bagels", "Wraps"] },
+        { name: "Green Bowl", type: "Vegan", hours: "11:00–15:00", openNow: false, menu: ["Grain Bowls", "Smoothies"] },
+      ],
+      library: {
+        hours: "Mon–Thu 08:00–24:00, Fri 08:00–20:00, Sat 10:00–18:00, Sun 12:00–24:00",
+        study_rooms: {
+          booking: "Book via Library Portal > Study Rooms",
+          rules: [
+            "2-hour limit per booking",
+            "Bring student ID",
+            "No food inside rooms",
+          ]
+        },
+        contacts: [
+          { dept: "Circulation", phone: "(555) 555-0101", email: "circulation@university.edu" },
+          { dept: "Reference",   phone: "(555) 555-0102", email: "ask@university.edu" },
+        ]
+      },
+      admin: {
+        student_id: {
+          how: "Visit Student Services with a government ID to get your card printed.",
+          hours: "Mon–Fri 09:00–17:00",
+          location: "Student Center, Room 102"
+        },
+        parking: {
+          permit: "Apply on the Parking Portal. Pick up in person with your ID.",
+          office_hours: "Mon–Fri 08:30–16:30",
+          location: "Parking Office, Ground Level Garage"
+        },
+        registrar: {
+          transcripts: "Request via Registrar Portal. Processing: 3–5 business days.",
+          address: "Registrar Office, Admin Building 2F",
+          hours: "Mon–Fri 09:00–16:00"
+        }
+      },
+      contacts: {
+        student_services: { phone: "(555) 555-0200", email: "studentservices@university.edu" },
+        it_helpdesk: { phone: "(555) 555-0300", email: "helpdesk@university.edu" },
+        security: { phone: "(555) 555-0911", email: "security@university.edu" }
+      }
+    };
+
+    // Lightweight “AI” intent handling over the demo database
+    function routeQuery(qRaw) {
+      const q = (qRaw || "").toLowerCase();
+
+      // Simple intent checks
+      const intents = [
+        { key: "schedule", test: /schedule|class|course|timetable|today|events|lectures?/ },
+        { key: "dining", test: /dining|caf(e|é)|food|eat|restaurant|open now|lunch|breakfast|dinner/ },
+        { key: "library", test: /library|study|book(ing)?|room|reference|circulation|hours/ },
+        { key: "facilities", test: /gym|fitness|rec|lab|printing|printer|facility|facilities/ },
+        { key: "admin", test: /admin|registrar|parking|permit|student id|id card|transcript|enroll|tuition/ },
+        { key: "contact", test: /contact|phone|email|helpdesk|security|student services/ },
+        { key: "help", test: /help|what can you do|how to use/ }
+      ];
+
+      const hit = intents.find(i => i.test.test(q));
+      switch (hit?.key) {
+        case "schedule": return answerSchedule(q);
+        case "dining": return answerDining(q);
+        case "library": return answerLibrary(q);
+        case "facilities": return answerFacilities(q);
+        case "admin": return answerAdmin(q);
+        case "contact": return answerContacts(q);
+        case "help": return answerHelp();
+        default: return answerFallback(qRaw);
+      }
+    }
+
+    function answerSchedule(q) {
+      // If user asks "today" or "now", add events
+      const includeEvents = /today|now/.test(q);
+      const classes = campusDB.schedules.map(c => `• ${c.id} — ${c.name} (${c.day} ${c.time}, ${c.location})`).join("\n");
+      const events = includeEvents ? "\n\nToday’s highlights:\n" + campusDB.events.map(e => `• ${e.title} — ${e.day} ${e.time}, ${e.location}`).join("\n") : "";
+      return {
+        title: "Class schedules",
+        text: `Here are current courses for ${campusDB.terms.current}:\n${classes}${events}\n\nTip: Tell me a course code (e.g., “CIS101 room?”)`,
+        followups: [
+          "What’s happening today?",
+          "Where is MAT221?",
+          "When is the next class?",
+        ]
+      };
+    }
+
+    function answerDining(q) {
+      const openOnly = /open now|open|now|currently/.test(q);
+      const list = campusDB.dining.filter(d => !openOnly || d.openNow);
+      if (list.length === 0) {
+        return {
+          title: "Dining",
+          text: "Looks like nothing is open at the moment. Try again later or ask for tomorrow’s hours.",
+          followups: ["Breakfast options", "Campus Brew menu", "Vegan spots"]
+        };
+      }
+      const lines = list.map(d => `• ${d.name} (${d.type}) — ${d.hours}${d.openNow ? " — Open" : " — Closed"}\n  Menu: ${d.menu.join(", ")}`).join("\n");
+      return {
+        title: "Dining options",
+        text: `Here’s what you can grab on campus:\n${lines}\n\nYou can ask “What’s open now?” or “Show vegan options.”`,
+        followups: ["What’s open now?", "Coffee near library", "Vegetarian options"]
+      };
+    }
+
+    function answerLibrary() {
+      const lib = campusDB.library;
+      const rules = lib.study_rooms.rules.map(r => `• ${r}`).join("\n");
+      const contacts = lib.contacts.map(c => `• ${c.dept}: ${c.phone}, ${c.email}`).join("\n");
+      return {
+        title: "Library services",
+        text: `Hours: ${lib.hours}\nStudy rooms: ${lib.study_rooms.booking}\nRules:\n${rules}\n\nContacts:\n${contacts}`,
+        followups: ["Book a study room", "Print near the library", "Quiet areas"]
+      };
+    }
+
+    function answerFacilities(q) {
+      const gyms = campusDB.facilities.gyms.map(g => `• ${g.name} — ${g.hours} (${g.status}) • ${g.location}`).join("\n");
+      const labs = campusDB.facilities.labs.map(l => `• ${l.name} — ${l.hours} (${l.status}) • ${l.location}`).join("\n");
+      const printing = campusDB.facilities.printing.map(p => `• ${p.name} — ${p.hours} • ${p.location}`).join("\n");
+      return {
+        title: "Facilities",
+        text: `Gyms:\n${gyms}\n\nLabs:\n${labs}\n\nPrinting:\n${printing}`,
+        followups: ["Is the CS Lab open?", "Where can I print?", "Gym busiest times"]
+      };
+    }
+
+    function answerAdmin(q) {
+      const id = campusDB.admin.student_id;
+      const park = campusDB.admin.parking;
+      const reg = campusDB.admin.registrar;
+      // Special focus if parking or ID is mentioned
+      if (/parking|permit/.test(q)) {
+        return {
+          title: "Parking permits",
+          text: `How to get a permit: ${park.permit}\nOffice hours: ${park.office_hours}\nLocation: ${park.location}`,
+          followups: ["Parking payment info", "Visitor parking", "Appeal a ticket"]
+        };
+      }
+      if (/student id|id card/.test(q)) {
+        return {
+          title: "Student ID",
+          text: `How: ${id.how}\nHours: ${id.hours}\nLocation: ${id.location}`,
+          followups: ["Lost ID replacement", "Add meal plan to ID", "Door access help"]
+        };
+      }
+      if (/transcript|registrar/.test(q)) {
+        return {
+          title: "Registrar & transcripts",
+          text: `Transcripts: ${reg.transcripts}\nHours: ${reg.hours}\nAddress: ${reg.address}`,
+          followups: ["Enrollment verification", "Change major", "Add/drop deadlines"]
+        };
+      }
+      return {
+        title: "Administrative procedures",
+        text: `Student ID: ${id.how} (${id.hours}, ${id.location})\n\nParking: ${park.permit} (${park.office_hours}, ${park.location})\n\nRegistrar: ${reg.transcripts} (${reg.hours}, ${reg.address})`,
+        followups: ["How to get a parking permit?", "Get a student ID", "Request transcripts"]
+      };
+    }
+
+    function answerContacts(q) {
+      const c = campusDB.contacts;
+      const lines = [
+        `• Student Services: ${c.student_services.phone}, ${c.student_services.email}`,
+        `• IT Helpdesk: ${c.it_helpdesk.phone}, ${c.it_helpdesk.email}`,
+        `• Campus Security: ${c.security.phone}, ${c.security.email}`,
+      ].join("\n");
+      return {
+        title: "Key contacts",
+        text: lines,
+        followups: ["Emergency procedures", "Report an issue", "Wi‑Fi help"]
+      };
+    }
+
+    function answerHelp() {
+      return {
+        title: "How I can help",
+        text: "Ask me about class schedules, dining hours, library booking, labs and printing, or admin steps like IDs, parking, and transcripts.\nTry: “Which dining halls are open now?”",
+        followups: ["What can I eat now?", "Book a study room", "Get a parking permit"]
+      };
+    }
+
+    function answerFallback(q) {
+      return {
+        title: "I can help with…",
+        text: "I didn’t quite get that. I can answer questions about schedules, facilities, dining, library, and administrative procedures.\nTry one of the shortcuts or rephrase your question.",
+        followups: ["Today’s schedule", "Dining open now", "Library hours"]
+      };
+    }
+
+    // Chat UI
+    const chatEl = document.getElementById("chat");
+    const formEl = document.getElementById("chatForm");
+    const inputEl = document.getElementById("userInput");
+    const sendBtn = document.getElementById("sendBtn");
+    const clearBtn = document.getElementById("clearBtn");
+    const exportBtn = document.getElementById("exportBtn");
+    const copyBtn = document.getElementById("copyBtn");
+
+    const suggestBtns = document.querySelectorAll(".suggest, .quick");
+
+    // Maintain conversation for export
+    const transcript = [];
+
+    function addMessage(role, content, options = {}) {
+      const wrap = document.createElement("div");
+      wrap.className = "flex " + (role === "user" ? "justify-end" : "justify-start");
+
+      const bubble = document.createElement("div");
+      bubble.className = "bubble " + (role === "user" ? "user-bubble" : "bot-bubble") + " max-w-[90%] sm:max-w-[75%] px-4 py-3";
+      bubble.setAttribute("data-role", role);
+
+      // Title (for bot)
+      if (options.title && role === "bot") {
+        const t = document.createElement("div");
+        t.className = "text-sm font-semibold text-sky-200 mb-1";
+        t.textContent = options.title;
+        bubble.appendChild(t);
+      }
+
+      // Content: preserve line breaks
+      const p = document.createElement("div");
+      p.className = "whitespace-pre-wrap leading-relaxed text-[15px]";
+      p.textContent = content;
+      bubble.appendChild(p);
+
+      // Followups
+      if (options.followups && options.followups.length) {
+        const row = document.createElement("div");
+        row.className = "flex flex-wrap gap-2 mt-3";
+        options.followups.forEach(f => {
+          const b = document.createElement("button");
+          b.className = "pill text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10";
+          b.textContent = f;
+          b.addEventListener("click", () => {
+            ask(f);
+          });
+          row.appendChild(b);
+        });
+        bubble.appendChild(row);
+      }
+
+      wrap.appendChild(bubble);
+      chatEl.appendChild(wrap);
+      chatEl.scrollTop = chatEl.scrollHeight;
+      return bubble;
+    }
+
+    function addTyping() {
+      const wrap = document.createElement("div");
+      wrap.className = "flex justify-start";
+      wrap.id = "typing";
+      const bubble = document.createElement("div");
+      bubble.className = "bubble bot-bubble max-w-[70%] px-4 py-3";
+      const row = document.createElement("div");
+      row.className = "typing";
+      row.innerHTML = "<span></span><span></span><span></span>";
+      bubble.appendChild(row);
+      wrap.appendChild(bubble);
+      chatEl.appendChild(wrap);
+      chatEl.scrollTop = chatEl.scrollHeight;
+    }
+
+    function removeTyping() {
+      const t = document.getElementById("typing");
+      if (t) t.remove();
+    }
+
+    function welcome() {
+      addMessage("bot",
+        "Hi! I’m your Campus AI. Ask me about class schedules, dining, library services, facilities like labs and gyms, or admin steps like parking and student IDs.",
+        {
+          title: "Welcome",
+          followups: [
+            "What’s open now?",
+            "How do I get a student ID?",
+            "What are library hours?",
+          ]
+        }
+      );
+    }
+
+    function ask(text) {
+      if (!text.trim()) return;
+      // Add user message
+      addMessage("user", text);
+      transcript.push({ role: "user", text });
+
+      // Bot typing
+      addTyping();
+
+      // Simulate thinking delay
+      setTimeout(() => {
+        const a = routeQuery(text);
+        removeTyping();
+
+        const botText = a.text;
+        addMessage("bot", botText, { title: a.title, followups: a.followups });
+
+        transcript.push({ role: "bot", title: a.title, text: botText });
+      }, 550);
+    }
+
+    // Handle form submit
+    formEl.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const text = inputEl.value.trim();
+      inputEl.value = "";
+      inputEl.rows = 1;
+      ask(text);
+      inputEl.focus();
+    });
+
+    // Auto-grow textarea
+    inputEl.addEventListener("input", () => {
+      inputEl.style.height = "auto";
+      inputEl.style.height = Math.min(inputEl.scrollHeight, 160) + "px";
+    });
+
+    // Clear chat
+    clearBtn.addEventListener("click", () => {
+      chatEl.innerHTML = "";
+      transcript.length = 0;
+      welcome();
+    });
+
+    // Suggested buttons
+    suggestBtns.forEach(btn => {
+      btn.addEventListener("click", () => {
+        ask(btn.getAttribute("data-q") || btn.textContent);
+      });
+    });
+
+    // Export transcript (as JSON in a new tab)
+    exportBtn.addEventListener("click", () => {
+      const data = {
+        exported_at: new Date().toISOString(),
+        conversation: transcript
+      };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "campus-chat-export.json";
+      document.body.appendChild(a);
+      a.click();
+      URL.revokeObjectURL(url);
+      a.remove();
+    });
+
+    // Copy last bot reply
+    copyBtn.addEventListener("click", () => {
+      const messages = [...chatEl.querySelectorAll('[data-role="bot"]')];
+      if (messages.length === 0) return;
+      const last = messages[messages.length - 1];
+      const text = last.innerText.trim();
+      navigator.clipboard.writeText(text).then(() => {
+        toast("Reply copied");
+      });
+    });
+
+    // Simple toast
+    function toast(msg) {
+      const t = document.createElement("div");
+      t.textContent = msg;
+      t.className = "fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-full text-sm bg-white/10 border border-white/10";
+      document.body.appendChild(t);
+      setTimeout(() => t.remove(), 1600);
+    }
+
+    // Initialize
+    welcome();
+  </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97e647b910989f4a',t:'MTc1Nzc1MjIwMS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
